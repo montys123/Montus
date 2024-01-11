@@ -1,0 +1,126 @@
+import pygame
+from random import randint
+
+pygame.init()
+
+window = pygame.display.set_mode((500, 500))
+back = pygame.image.load('fon.jpg')
+
+clock = pygame.time.Clock()
+
+game_over = False
+
+
+class Area():
+    def __init__(self, x=0, y=0, width=70, height=40, color=None):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.fill_color = (0, 0, 0)
+        if color:
+            self.fill_color = color
+
+    def color(self, new_color):
+        self.fill_color = new_color
+
+    def fill(self):
+        pygame.draw.rect(window, self.fill_color, self.rect)
+
+    def collidepoint(self, x, y):
+        return self.rect.collidepoint(x, y)
+
+    def colliderect(self, rect):
+        return self.rect.colliderect(rect)
+
+
+class Picture(Area):
+    def __init__(self, filename, x=0, y=0, width=0, height=0):
+        Area.__init__(self, x=x, y=y, width=width, height=height, color=None)
+        self.image = pygame.image.load(filename)
+
+    def draw(self):
+        window.blit(self.image, (self.rect.x, self.rect.y))
+
+
+class Label(Area):
+    def set_text(self, text, fsize=25, text_color=None):
+        self.image = pygame.font.Font(None, fsize).render(text, True, text_color)
+
+    def draw(self, shift_x, shift_y):
+        self.fill()
+        window.blit(self.image, (self.rect.x + shift_x, self.rect.y + shift_y))
+
+
+ball = Picture('ball.png', 225, 225, 50, 50)
+platfrom1 = Picture('Paddle.png', 10, 200, 10, 140)
+platfrom2 = Picture('Paddle.png', 480, 200, 10, 140)
+
+direct = randint(1, 2)
+if direct == 1:
+    dx = 3
+    dy = 3
+else:
+    dx = -3
+    dy = -3
+
+move_up = False
+move_down = False
+while not game_over:
+    platfrom1.fill()
+    platfrom2.fill()
+    ball.fill()
+    window.blit(back, (0, 0))
+    # рух
+    ball.rect.x += dx
+    ball.rect.y += dy
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_w:
+                move_up = True
+            if event.key == pygame.K_s:
+                move_down = True
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_w:
+                move_up = False
+            if event.key == pygame.K_s:
+                move_down = False
+    if move_up:
+        platfrom1.rect.y -= 3
+    if move_down:
+        platfrom1.rect.y += 3
+        # рух !
+    # авто платформа
+    if ball.rect.y > (platfrom2.rect.y + 25):
+        platfrom2.rect.y += 3
+    if ball.rect.y < (platfrom2.rect.y + 25):
+        platfrom2.rect.y -= 3
+    # авто платформа !
+    # відбивання
+    if ball.rect.y < 0 or ball.rect.y > 450:
+        dy *= -1
+    if ball.rect.colliderect(platfrom1.rect) or ball.rect.colliderect(platfrom2.rect):
+        dx *= -1
+
+
+    """програш та перемога"""
+    if ball.rect.x < 0:
+        window.fill((0,0,0))
+        text_lose = pygame.font.Font(None,60).render('ПРОГРАВ!',True,(255,255,255))
+        window.blit(text_lose,(150,225))
+        platfrom2.rect.y = 225
+        move_up = False
+        move_down = False
+
+    if ball.rect.x > 500:
+        window.fill((255,255,255))
+        text_lose = pygame.font.Font(None,60).render('ПЕРЕМОГА!',True,(0,200,255))
+        window.blit(text_lose,(150,225))
+        platfrom2.rect.y = 225
+        move_up = False
+        move_down = False
+
+    ball.draw()
+    platfrom1.draw()
+    platfrom2.draw()
+    pygame.display.update()
+    clock.tick(60)
